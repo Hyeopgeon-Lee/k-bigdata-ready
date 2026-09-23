@@ -1,0 +1,1 @@
+export const auth={get role(){return sessionStorage.getItem('ready_role')},get token(){return sessionStorage.getItem('ready_token')},set(token,role){sessionStorage.setItem('ready_token',token);sessionStorage.setItem('ready_role',role)},clear(){sessionStorage.removeItem('ready_token');sessionStorage.removeItem('ready_role')}};
