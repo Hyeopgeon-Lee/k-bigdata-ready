@@ -1,5 +1,9 @@
 # 설치 및 배포
 
+## 기존 READY 프로젝트 업데이트
+
+현재 운영 Apps Script 프로젝트가 단일 `Code.gs`를 사용하는 경우 `node tools/build-gas-bundle.mjs`로 만든 `deployment/READY_Code.gs`의 전체 내용을 기존 `Code.gs`에 붙여넣고 저장합니다. 기존 코드는 먼저 Apps Script 프로젝트 기록 또는 별도 백업으로 보존합니다. 새 버전을 배포하기 전에 `initializeSpreadsheet()`를 실행하면 기존 12개 Sheet의 데이터를 유지하면서 `README_CHECK`, `PORTFOLIO_CHECK`와 필요한 열을 추가합니다. 기존 학생에 대한 신규 평가 결과는 점검을 다시 실행한 뒤 채워집니다. 이후 웹 앱의 기존 배포를 새 버전으로 갱신하고 `/exec` 응답을 확인한 다음 프론트엔드 브랜치를 `main`에 병합합니다.
+
 1. Google Sheets에서 빈 스프레드시트를 만들고 URL의 `/d/`와 `/edit` 사이 값을 복사합니다.
 2. 확장 프로그램 → Apps Script를 열고 `apps-script/`의 `.gs` 파일 및 매니페스트를 같은 이름으로 만듭니다.
 3. 프로젝트 설정에서 시간대를 `Asia/Seoul`로 설정합니다.
