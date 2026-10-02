@@ -9,6 +9,7 @@ const READY = {
     GITHUB_CHECK: ['student_id','checked_at','last_activity_at','commits_7d','commits_30d','active_repository_count','readme_count','inactive_days','activity_status','check_status','error_message'],
     REPOSITORY_CHECK: ['repo_id','student_id','checked_at','last_commit_at','commits_7d','commits_30d','student_commits_7d','student_commits_30d','readme_exists','primary_language','github_updated_at','check_status','error_message'],
     BLOG_CHECK: ['student_id','checked_at','site_available','last_repo_commit_at','last_post_date','posts_30d','platform_type','check_status','error_message'],
+    NOTION_CHECK: ['student_id','checked_at','page_id','last_edited_at','inactive_days','activity_status','check_status','error_message'],
     CHANGE_HISTORY: ['history_id','student_id','changed_at','category','field_name','old_value','new_value','changed_by'],
     PROFESSOR_MEMO: ['memo_id','student_id','memo_text','created_at','updated_at'],
     CHECK_LOG: ['log_id','batch_id','started_at','finished_at','target_count','success_count','failed_count','status','error_message'],

@@ -18,12 +18,22 @@
 |---|---|
 | `SPREADSHEET_ID` | 위 스프레드시트 ID |
 | `GITHUB_TOKEN` | GitHub fine-grained token. 공개 저장소 Contents metadata 읽기 권한만 최소 부여 |
+| `NOTION_TOKEN` | Notion 내부 통합(Integration)의 Secret. 등록된 페이지의 최종 수정일 조회용 |
 | `PIN_SALT` | 32바이트 이상 무작위 문자열 |
 | `ADMIN_PIN_HASH` | Apps Script에서 `hashPin('관리자 PIN')`을 임시 실행해 얻은 SHA-256 hex 값 |
 | `REPORT_EMAIL` | `hglee67@kopo.ac.kr` |
 | `APP_URL` | `https://ready.k-bigdata.kr/` |
 
 관리자 PIN 원문이나 Salt를 문서·Sheet·프론트엔드에 기록하지 않습니다. 학생 PIN은 등록 API가 같은 서버 해시 함수를 사용합니다.
+
+## Notion 업데이트 점검 설정
+
+1. [Notion Integrations](https://www.notion.so/my-integrations)에서 내부 통합을 만들고 Secret을 복사합니다.
+2. Apps Script 프로젝트 설정 → 스크립트 속성에 `NOTION_TOKEN`으로 저장합니다. 토큰은 GitHub나 Sheet에 기록하지 않습니다.
+3. 학생이 등록한 각 Notion 페이지에서 `연결` 또는 `Connections` 메뉴로 위 통합을 초대합니다. 학생 소유 페이지는 학생이 직접 연결해야 합니다.
+4. `runTestCheck('학번')`를 실행하고 `NOTION_CHECK` Sheet에서 `last_edited_at`, `inactive_days`, `activity_status`가 기록되는지 확인합니다.
+
+공식 Notion API가 반환하는 페이지 `last_edited_time`을 기준으로 30일 미만은 `최근 업데이트`, 30~59일은 `업데이트 필요`, 60일 이상은 `장기 미업데이트`로 표시합니다. 연결하지 않은 페이지는 404 또는 권한 오류로 기록됩니다.
 
 ## 브라우저/CORS 점검
 

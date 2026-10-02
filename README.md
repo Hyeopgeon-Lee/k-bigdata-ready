@@ -8,6 +8,7 @@
 - 단계형 최초 등록, 영역별 프로필 수정, Repository 최대 5개 soft delete, 자격증 관리 및 변경 이력
 - 학생 본인 대시보드, 공개 정보만 제공하는 학과 현황, 관리자 요약·필터·학생 상세·비공개 교수 메모
 - GitHub REST API로 계정/Repository/commit/본인 commit/README/언어/업데이트 점검
+- 학생 이름과 준비 현황을 메인 화면에 공개하고, Notion API로 문서 마지막 수정일과 장기 미업데이트 상태 점검
 - 매일 06시·07시, 당일 미점검 학생을 동적으로 최대 30명씩 처리하고 이전 실패 학생 우선 재시도
 - GitHub Pages 접속 및 Jekyll/Hugo/일반 콘텐츠 폴더 탐지, 10분 즉시 점검 쿨다운
 - 매주 월요일 08시 HTML 주간 리포트와 `WEEKLY_SNAPSHOT` 전주 비교
