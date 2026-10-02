@@ -6,14 +6,20 @@ const READY = {
     STUDENTS: ['student_id','name','career_target','github_username','github_url','github_pages_url','github_pages_repo','notion_url','portfolio_url','blog_url','resume_status','cover_letter_status','pin_hash','active','created_at','updated_at','last_manual_update_at','grade'],
     REPOSITORIES: ['repo_id','student_id','repo_owner','repo_name','repo_url','is_primary','display_order','active','registered_at','updated_at'],
     CERTIFICATES: ['certificate_id','student_id','certificate_name','status','acquired_date','active','created_at','updated_at'],
-    GITHUB_CHECK: ['student_id','checked_at','last_activity_at','commits_7d','commits_30d','active_repository_count','readme_count','inactive_days','activity_status','check_status','error_message'],
-    REPOSITORY_CHECK: ['repo_id','student_id','checked_at','last_commit_at','commits_7d','commits_30d','student_commits_7d','student_commits_30d','readme_exists','primary_language','github_updated_at','check_status','error_message'],
+    GITHUB_CHECK: ['student_id','checked_at','last_activity_at','commits_7d','commits_30d','active_repository_count','readme_count','inactive_days','activity_status','check_status','error_message','active_days_7d','active_days_14d','recency_status'],
+    REPOSITORY_CHECK: ['repo_id','student_id','checked_at','last_commit_at','commits_7d','commits_30d','student_commits_7d','student_commits_30d','readme_exists','primary_language','github_updated_at','check_status','error_message','last_push_at','active_days_7d','active_days_14d','gitignore_exists','license_exists','description_exists','topics_count','topics','visibility','branch_count','push_status','activity_dates_14d'],
+    README_CHECK: ['repo_id','student_id','checked_at','readme_exists','introduction','purpose','features','tech_stack','architecture','run_guide','screenshots','role','troubleshooting','readme_status','missing_items','check_status','error_message'],
     BLOG_CHECK: ['student_id','checked_at','site_available','last_repo_commit_at','last_post_date','posts_30d','platform_type','check_status','error_message'],
     NOTION_CHECK: ['student_id','checked_at','page_id','last_edited_at','inactive_days','activity_status','check_status','error_message'],
+    PORTFOLIO_CHECK: ['student_id','checked_at','url','site_available','check_status','error_message'],
     CHANGE_HISTORY: ['history_id','student_id','changed_at','category','field_name','old_value','new_value','changed_by'],
     PROFESSOR_MEMO: ['memo_id','student_id','memo_text','created_at','updated_at'],
     CHECK_LOG: ['log_id','batch_id','started_at','finished_at','target_count','success_count','failed_count','status','error_message'],
-    WEEKLY_SNAPSHOT: ['snapshot_date','total_students','github_active_7d','github_inactive_14d','blog_active_7d','notion_registered','resume_completed','cover_letter_completed','certificate_holders','check_success','check_failed'],
+    WEEKLY_SNAPSHOT: ['snapshot_date','total_students','github_active_7d','github_inactive_14d','blog_active_7d','notion_registered','resume_completed','cover_letter_completed','certificate_holders','check_success','check_failed','excellent','good','preparing','attention_count','readme_missing','readme_needs_work','portfolio_missing','grade2_resume_incomplete','grade2_cover_incomplete'],
     SETTINGS: ['key','value','updated_at']
   }
 };
+function props(){return PropertiesService.getScriptProperties()}
+function now(){return Utilities.formatDate(new Date(),READY.TZ,"yyyy-MM-dd'T'HH:mm:ssXXX")}
+function id(prefix){return prefix+'_'+Utilities.getUuid()}
+function publicError(code,message){const e=new Error(message);e.code=code;return e}

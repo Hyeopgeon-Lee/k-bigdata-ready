@@ -1,5 +1,9 @@
 # 설치 및 배포
 
+## 기존 READY 프로젝트 업데이트
+
+현재 운영 Apps Script 프로젝트가 단일 `Code.gs`를 사용하는 경우 `node tools/build-gas-bundle.mjs`로 만든 `deployment/READY_Code.gs`의 전체 내용을 기존 `Code.gs`에 붙여넣고 저장합니다. 기존 코드는 먼저 Apps Script 프로젝트 기록 또는 별도 백업으로 보존합니다. 새 버전을 배포하기 전에 `initializeSpreadsheet()`를 실행하면 기존 12개 Sheet의 데이터를 유지하면서 `README_CHECK`, `PORTFOLIO_CHECK`와 필요한 열을 추가합니다. 기존 학생에 대한 신규 평가 결과는 점검을 다시 실행한 뒤 채워집니다. 이후 웹 앱의 기존 배포를 새 버전으로 갱신하고 `/exec` 응답을 확인한 다음 프론트엔드 브랜치를 `main`에 병합합니다.
+
 1. Google Sheets에서 빈 스프레드시트를 만들고 URL의 `/d/`와 `/edit` 사이 값을 복사합니다.
 2. 확장 프로그램 → Apps Script를 열고 `apps-script/`의 `.gs` 파일 및 매니페스트를 같은 이름으로 만듭니다.
 3. 프로젝트 설정에서 시간대를 `Asia/Seoul`로 설정합니다.
@@ -9,6 +13,7 @@
 7. `assets/js/config.js`의 `API_URL`에 `/exec` URL을 넣고 커밋합니다. `/dev` URL은 운영에 쓰지 않습니다.
 8. `setupTriggers()`를 실행합니다. 06시/07시 일일 점검 및 월요일 08시 리포트, 총 3개인지 트리거 화면에서 확인합니다.
 9. 실제 등록 학생 ID로 `runTestCheck('학번')`, 이어서 `sendTestWeeklyReport()`를 실행해 GitHub/Sheets/HTML 메일을 확인합니다.
+   READY 준비상태 개편 후에는 먼저 기존 스프레드시트를 백업하고 `initializeSpreadsheet()`를 실행하여 `README_CHECK`와 새 열을 추가합니다. 이어서 학생별 점검을 분할 실행해야 신규 활동일·README 결과가 채워집니다. 점검 전에는 `미점검` 상태가 표시될 수 있습니다.
 10. GitHub Settings → Pages → Build and deployment에서 Deploy from a branch, `main`, `/(root)`를 선택합니다.
 11. Custom domain에 `ready.k-bigdata.kr`을 입력합니다. DNS CNAME이 `hyeopgeon-lee.github.io`를 가리키는지 확인한 뒤 인증서 발급 후 Enforce HTTPS를 켭니다.
 
@@ -34,6 +39,14 @@
 4. `runTestCheck('학번')`를 실행하고 `NOTION_CHECK` Sheet에서 `last_edited_at`, `inactive_days`, `activity_status`가 기록되는지 확인합니다.
 
 공식 Notion API가 반환하는 페이지 `last_edited_time`을 기준으로 30일 미만은 `최근 업데이트`, 30~59일은 `업데이트 필요`, 60일 이상은 `장기 미업데이트`로 표시합니다. 연결하지 않은 페이지는 404 또는 권한 오류로 기록됩니다.
+
+## 준비상태 평가
+
+- 1학년: 최근 7일 개발 활동일 3일 이상, Repository, README 핵심 내용, 포트폴리오 등록과 최신성을 확인합니다.
+- 2학년: 위 조건과 함께 이력서 `최종 완성`, 자기소개서 `기본본 완성` 이상을 확인합니다.
+- 필수조건을 모두 충족해야 `준비 우수`입니다. 일부 충족은 `준비 양호` 또는 `준비 중`, 충족 항목이 없으면 `관심 필요`입니다.
+- commit 총 개수는 참고정보이며 핵심 판정에 사용하지 않습니다. LICENSE·Private·branch 수는 필수조건이 아닙니다.
+- Notion 페이지는 Integration에 연결해야 최종 수정 시각을 읽을 수 있습니다. 접근 불가한 페이지는 URL 등록만으로 최신성 충족 처리되지 않습니다.
 
 ## 브라우저/CORS 점검
 
