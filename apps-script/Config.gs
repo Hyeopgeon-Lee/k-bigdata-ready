@@ -19,3 +19,7 @@ const READY = {
     SETTINGS: ['key','value','updated_at']
   }
 };
+function props(){return PropertiesService.getScriptProperties()}
+function now(){return Utilities.formatDate(new Date(),READY.TZ,"yyyy-MM-dd'T'HH:mm:ssXXX")}
+function id(prefix){return prefix+'_'+Utilities.getUuid()}
+function publicError(code,message){const e=new Error(message);e.code=code;return e}
