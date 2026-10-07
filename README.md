@@ -19,6 +19,12 @@
 
 `index.html`/`assets`는 GitHub Pages 정적 프론트엔드이고, `apps-script`는 Sheets를 사용하는 Web App 백엔드입니다. 상세 설치는 [SETUP](docs/SETUP.md), API는 [API](docs/API.md), 스키마는 [DATA_SCHEMA](docs/DATA_SCHEMA.md)를 봅니다.
 
+## Apps Script 자동배포
+
+GAS 백엔드는 GitHub의 `apps-script/`를 원본으로 관리합니다. GAS 관련 변경이 `main`에 반영되면 GitHub Actions가 회귀 테스트와 배포 번들 동기화를 확인한 뒤 clasp로 기존 Apps Script Web App 배포를 갱신할 수 있습니다.
+
+최초 1회 Google 인증 및 GitHub Actions Secret 설정이 필요합니다. 자세한 절차는 [GAS_AUTO_DEPLOY](docs/GAS_AUTO_DEPLOY.md)를 확인합니다.
+
 ## 보안
 
 GitHub Token, PIN 원문, Salt, Spreadsheet ID는 저장소에 두지 않습니다. 학생 PIN과 관리자 PIN은 `PIN_SALT + PIN`의 SHA-256 해시만 서버에서 비교합니다. 공개 API는 교수 메모, PIN 해시, 내부 로그를 반환하지 않습니다. URL 검증과 출력 HTML escape를 적용합니다.
