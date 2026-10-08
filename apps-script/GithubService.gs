@@ -6,18 +6,29 @@ function githubActivityStatus(days,inactive){if(days>=3)return '정상';if(days=
 function githubRecencyStatus(inactive){if(inactive==='')return '미점검';const days=Number(inactive);return days<=3?'정상':days<=6?'활동 필요':days<=13?'활동 부족':'장기 미활동'}
 function pushStatus(date){if(!date)return '미점검';const days=Math.max(0,Math.floor((Date.now()-new Date(date).getTime())/86400000));return days<=7?'정상':days<=14?'관심':days<=29?'업데이트 필요':'장기 미업데이트'}
 function repoCommits(base,username){const since=encodeURIComponent(isoDaysAgo(30)),author=username?'&author='+encodeURIComponent(username):'',all=[];for(let page=1;page<=3;page++){const batch=gh(base+'/commits?since='+since+author+'&per_page=100&page='+page,true)||[];all.push(...batch);if(batch.length<100)break}return all}
+function repoSourcePresent(paths){
+  const extensions=/\.(?:java|kt|py|js|mjs|cjs|ts|jsx|tsx|vue|go|dart|sql|r|ipynb|c|cpp|cs|swift|php|rb|rs|html|css)$/i;
+  return paths.some(p=>extensions.test(p)&&!/(^|\/)(?:vendor|node_modules|dist|build|target|\.next|coverage|generated)(?:\/|$)/i.test(p));
+}
+function repoTreePaths(base,meta){
+  try{
+    const tree=gh(base+'/git/trees/'+encodeURIComponent(meta.default_branch||'HEAD')+'?recursive=1',true);
+    if(!tree||tree.truncated||!Array.isArray(tree.tree))return null;
+    return tree.tree.filter(x=>x.type==='blob').map(x=>x.path);
+  }catch(e){return null} // Optional quality checks must not turn API errors into student deficiencies.
+}
 function checkRepository(student,repo,full,previous,previousReadme){
-  const base='/repos/'+encodeURIComponent(repo.repo_owner)+'/'+encodeURIComponent(repo.repo_name),meta=gh(base),commits=repoCommits(base,student.github_username),dates=commits.map(c=>c.commit&&c.commit.author&&c.commit.author.date).filter(Boolean).sort().reverse(),last=dates[0]||'',allowed7=recentDateSet(7),seven=commits.filter(c=>{const d=c.commit&&c.commit.author&&c.commit.author.date;return d&&allowed7.has(Utilities.formatDate(new Date(d),READY.TZ,'yyyy-MM-dd'))}),result={repo_id:repo.repo_id,student_id:student.student_id,checked_at:now(),last_commit_at:last,last_push_at:meta.pushed_at||'',commits_7d:seven.length,commits_30d:commits.length,student_commits_7d:seven.length,student_commits_30d:commits.length,active_days_7d:activityDates(commits,7).length,active_days_14d:activityDates(commits,14).length,primary_language:meta.language||'',github_updated_at:meta.updated_at||'',visibility:meta.private?'Private':'Public',push_status:pushStatus(meta.pushed_at),check_status:'SUCCESS',error_message:''};
+  const base='/repos/'+encodeURIComponent(repo.repo_owner)+'/'+encodeURIComponent(repo.repo_name),meta=gh(base),commits=repoCommits(base,student.github_username),dates=commits.map(c=>c.commit&&c.commit.author&&c.commit.author.date).filter(Boolean).sort().reverse(),older=dates.length?[]:(gh(base+'/commits?author='+encodeURIComponent(student.github_username)+'&per_page=1',true)||[]),last=dates[0]||older[0]?.commit?.author?.date||'',allowed7=recentDateSet(7),seven=commits.filter(c=>{const d=c.commit&&c.commit.author&&c.commit.author.date;return d&&allowed7.has(Utilities.formatDate(new Date(d),READY.TZ,'yyyy-MM-dd'))}),result={repo_id:repo.repo_id,student_id:student.student_id,checked_at:now(),last_commit_at:last,last_push_at:meta.pushed_at||'',commits_7d:seven.length,commits_30d:commits.length,student_commits_7d:seven.length,student_commits_30d:commits.length,active_days_7d:activityDates(commits,7).length,active_days_14d:activityDates(commits,14).length,primary_language:meta.language||'',github_updated_at:meta.updated_at||'',visibility:meta.private?'Private':'Public',push_status:pushStatus(meta.pushed_at),check_status:'SUCCESS',error_message:''};
   result.activity_dates_14d=JSON.stringify(activityDates(commits,14));
   if(full){
-    const unchanged=previous&&previousReadme&&String(previous.last_push_at||'')===String(meta.pushed_at||'');
+    const unchanged=previous&&previousReadme&&Number(previousReadme.rule_version)===2&&String(previous.last_push_at||'')===String(meta.pushed_at||'');
     if(unchanged){
-      ['readme_exists','gitignore_exists','license_exists','description_exists','topics_count','topics','branch_count'].forEach(k=>result[k]=previous[k]);
+      ['readme_exists','gitignore_exists','license_exists','description_exists','topics_count','topics','branch_count','source_exists'].forEach(k=>result[k]=previous[k]);
       upsert('README_CHECK','repo_id',Object.assign({},previousReadme,{checked_at:result.checked_at,check_status:'SUCCESS',error_message:''}));
     }else{
       const readme=gh(base+'/readme',true),ignore=gh(base+'/contents/.gitignore',true),license=meta.license||gh(base+'/license',true),branches=gh(base+'/branches?per_page=100',true)||[];let markdown='';
       if(readme&&readme.content){try{markdown=Utilities.newBlob(Utilities.base64Decode(readme.content.replace(/\s/g,''))).getDataAsString()}catch(e){markdown=''}}
-      const analysis=analyzeReadme(markdown);
+      const files=repoTreePaths(base,meta);const analysis=analyzeReadme(markdown,files,readme&&readme.path||'README.md');result.source_exists=files?repoSourcePresent(files):'';
       result.readme_exists=Boolean(readme);result.gitignore_exists=Boolean(ignore);result.license_exists=Boolean(license);result.description_exists=Boolean(String(meta.description||'').trim());result.topics=JSON.stringify(meta.topics||[]);result.topics_count=(meta.topics||[]).length;result.branch_count=branches.length;
       upsert('README_CHECK','repo_id',Object.assign({repo_id:repo.repo_id,student_id:student.student_id,checked_at:result.checked_at,readme_exists:Boolean(readme),check_status:'SUCCESS',error_message:''},analysis));
     }

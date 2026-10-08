@@ -11,8 +11,8 @@ const READY = {
     REPOSITORIES: ['repo_id','student_id','repo_owner','repo_name','repo_url','is_primary','display_order','active','registered_at','updated_at'],
     CERTIFICATES: ['certificate_id','student_id','certificate_name','status','acquired_date','active','created_at','updated_at'],
     GITHUB_CHECK: ['student_id','checked_at','last_activity_at','commits_7d','commits_30d','active_repository_count','readme_count','inactive_days','activity_status','check_status','error_message','active_days_7d','active_days_14d','recency_status'],
-    REPOSITORY_CHECK: ['repo_id','student_id','checked_at','last_commit_at','commits_7d','commits_30d','student_commits_7d','student_commits_30d','readme_exists','primary_language','github_updated_at','check_status','error_message','last_push_at','active_days_7d','active_days_14d','gitignore_exists','license_exists','description_exists','topics_count','topics','visibility','branch_count','push_status','activity_dates_14d'],
-    README_CHECK: ['repo_id','student_id','checked_at','readme_exists','introduction','purpose','features','tech_stack','architecture','run_guide','screenshots','role','troubleshooting','readme_status','missing_items','check_status','error_message'],
+    REPOSITORY_CHECK: ['repo_id','student_id','checked_at','last_commit_at','commits_7d','commits_30d','student_commits_7d','student_commits_30d','readme_exists','primary_language','github_updated_at','check_status','error_message','last_push_at','active_days_7d','active_days_14d','gitignore_exists','license_exists','description_exists','topics_count','topics','visibility','branch_count','push_status','activity_dates_14d','source_exists'],
+    README_CHECK: ['repo_id','student_id','checked_at','readme_exists','introduction','purpose','features','tech_stack','architecture','run_guide','screenshots','role','troubleshooting','readme_status','missing_items','check_status','error_message','rule_version','broken_links_count','broken_link_samples'],
     BLOG_CHECK: ['student_id','checked_at','site_available','last_repo_commit_at','last_post_date','posts_30d','platform_type','check_status','error_message'],
     NOTION_CHECK: ['student_id','checked_at','page_id','last_edited_at','inactive_days','activity_status','check_status','error_message'],
     PORTFOLIO_CHECK: ['student_id','checked_at','url','site_available','check_status','error_message','url_results'],
@@ -64,20 +64,81 @@ function studentLogin(req){const s=active('STUDENTS').find(x=>String(x.student_i
 function adminLogin(req){verifyLoginAttempt('admin','READY_ADMIN',secureEq(props().getProperty('ADMIN_PIN_HASH'),hashPin(req.pin)));return{token:newSession('ADMIN'),role:'ADMIN'}}
 
 // === ReadmeService.gs ===
+// Rules are structural and do not claim to grade technical correctness.
 const README_AREAS={
-  introduction:/프로젝트\s*소개|overview|introduction|about/i,
-  purpose:/개발\s*(목적|배경)|문제\s*정의|why|motivation|problem\s*(statement|definition)/i,
-  features:/주요\s*기능|features?|main\s*features?/i,
-  tech_stack:/기술\s*스택|tech\s*stack|technolog(?:y|ies)|사용\s*기술/i,
-  architecture:/시스템\s*구조|아키텍처|architecture|system\s*design/i,
-  run_guide:/실행\s*방법|설치|installation|getting\s*started|how\s*to\s*run|usage/i,
-  screenshots:/실행\s*화면|결과\s*(이미지|화면|설명)|screenshots?|results?|demo/i,
-  role:/담당\s*역할|나의\s*역할|내\s*역할|my\s*role|contributions?|역할/i,
-  troubleshooting:/트러블\s*슈팅|문제\s*해결|trouble\s*shooting|issues?|problem\s*solving/i
+  introduction:/^(?:프로젝트\s*(?:소개|개요)|개요|overview|introduction|about\s+(?:this|the)\s+project)$/i,
+  purpose:/^(?:개발\s*(?:목적|배경)|문제\s*정의|why|motivation|problem\s*(?:statement|definition)|목표)$/i,
+  features:/^(?:주요\s*기능|기능\s*소개|features?|main\s*features?)$/i,
+  tech_stack:/^(?:기술\s*스택|사용\s*기술|tech\s*stack|technolog(?:y|ies))$/i,
+  architecture:/^(?:시스템\s*구조|아키텍처|architecture|system\s*design)$/i,
+  run_guide:/^(?:실행\s*방법|설치(?:\s*및\s*실행)?|installation|getting\s*started|how\s*to\s*run|usage|실행\s*가이드)$/i,
+  screenshots:/^(?:실행\s*화면|결과\s*(?:이미지|화면|설명)|screenshots?|results?|demo|시연\s*화면)$/i,
+  role:/^(?:담당\s*역할|나의\s*역할|내\s*역할|my\s*role|contributions?|역할\s*및\s*기여)$/i,
+  troubleshooting:/^(?:트러블\s*슈팅|문제\s*해결|troubleshooting|trouble\s*shooting|problem\s*solving|장애\s*대응)$/i
 };
-function readmeSections(markdown){const out=[];let current={heading:'',body:[]};String(markdown||'').replace(/\r/g,'').split('\n').forEach(line=>{const heading=line.match(/^#{1,6}\s+(.+)/);if(heading){out.push(current);current={heading:heading[1].trim(),body:[]}}else current.body.push(line)});out.push(current);return out}
-function meaningfulReadmeText(value){return String(value||'').replace(/!\[[^\]]*\]\([^)]*\)|<img\b[^>]*>|\[[^\]]+\]\([^)]*\)|[`*_#>|\-]/g,' ').replace(/\s+/g,' ').trim()}
-function analyzeReadme(markdown){const text=String(markdown||''),sections=readmeSections(text),result={};Object.keys(README_AREAS).forEach(key=>{const section=sections.find(s=>README_AREAS[key].test(s.heading));const body=section?meaningfulReadmeText(section.body.join(' ')):'';const image=section&&/!\[[^\]]*\]\([^)]*\)|<img\b/i.test(section.body.join(' '));const min=key==='role'||key==='troubleshooting'?35:18;result[key]=Boolean(section&&(body.length>=min||(key==='screenshots'&&image)))});if(!result.screenshots&&/!\[[^\]]*\]\([^)]*\)|<img\b/i.test(text))result.screenshots=true;const missing=Object.keys(result).filter(k=>!result[k]);const core=['introduction','purpose','features','tech_stack','run_guide','role','troubleshooting'];const coreMissing=core.filter(k=>!result[k]);result.readme_status=!text.trim()?'README 미작성':meaningfulReadmeText(text).length<100?'README 내용 부족':coreMissing.length?'README 보완 필요':missing.length>2?'README 보완 필요':'README 양호';result.missing_items=missing.join(',');return result}
+const README_CORE=['introduction','purpose','features','tech_stack','run_guide','role','troubleshooting'];
+function readmeSections(markdown){
+  const out=[];let current={heading:'',body:[]};
+  String(markdown||'').replace(/\r/g,'').split('\n').forEach(line=>{
+    const heading=line.match(/^#{1,6}\s+(.+)/);
+    if(heading){out.push(current);current={heading:heading[1].replace(/\s+#+\s*$/,'').trim(),body:[]}}
+    else current.body.push(line);
+  });out.push(current);return out;
+}
+function meaningfulReadmeText(value){
+  return String(value||'')
+    .replace(/\x60{3}[\s\S]*?\x60{3}/g,' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)|<img\b[^>]*>/gi,' ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g,'$1')
+    .replace(/[\x60*_#>|\-]/g,' ').replace(/\s+/g,' ').trim();
+}
+function usefulReadmeBody(raw,min){
+  const text=meaningfulReadmeText(raw);
+  if(text.length<min)return false;
+  if(/^(?:todo|tbd|추후\s*작성|작성\s*중|내용\s*입력|coming\s*soon|준비\s*중)[\s.!]*$/i.test(text))return false;
+  // A repeated short phrase is not a substantial description.
+  const words=text.split(/[\s,.;:!?()]+/).filter(Boolean);
+  if(words.length>7&&new Set(words.map(x=>x.toLowerCase())).size<4)return false;
+  return true;
+}
+function localReadmeLinks(markdown,files,readmePath){
+  if(!Array.isArray(files))return {broken_links_count:'',broken_link_samples:''};
+  const known=new Set(files.map(f=>String(f).replace(/^\/+/,'')));
+  const folder=String(readmePath||'README.md').split('/').slice(0,-1);
+  const broken=[];
+  const re=/!?\[[^\]]*\]\((<?[^)\s]+>?)(?:\s+["'][^)]*["'])?\)/g;
+  let match;
+  while((match=re.exec(String(markdown||'')))!==null){
+    let link=match[1].replace(/^<|>$/g,'');
+    if(!link||/^(?:[a-z][a-z0-9+.-]*:|#|\/\/)/i.test(link))continue;
+    link=link.split(/[?#]/)[0];
+    try{link=decodeURIComponent(link)}catch(e){}
+    const parts=link.startsWith('/')?[]:folder.slice();
+    link.split('/').forEach(x=>{if(!x||x==='.')return;if(x==='..')parts.pop();else parts.push(x)});
+    const target=parts.join('/');
+    if(target&&!known.has(target)&&!Array.from(known).some(f=>f.startsWith(target.replace(/\/?$/,'/'))))broken.push(target);
+  }
+  return {broken_links_count:broken.length,broken_link_samples:broken.slice(0,3).join(' | ')};
+}
+function analyzeReadme(markdown,files,readmePath){
+  const text=String(markdown||''),sections=readmeSections(text),result={rule_version:2};
+  Object.keys(README_AREAS).forEach(key=>{
+    const matching=sections.filter(s=>README_AREAS[key].test(s.heading));
+    const min=key==='role'||key==='troubleshooting'?35:18;
+    result[key]=matching.some(section=>{
+      const raw=section.body.join('\n');
+      const image=/!\[[^\]]*\]\([^)]*\)|<img\b/i.test(raw);
+      return usefulReadmeBody(raw,min)||(key==='screenshots'&&image);
+    });
+  });
+  if(!result.screenshots&&/!\[[^\]]*\]\([^)]*\)|<img\b/i.test(text))result.screenshots=true;
+  const missing=Object.keys(README_AREAS).filter(k=>!result[k]);
+  const coreMissing=README_CORE.filter(k=>!result[k]);
+  result.readme_status=!text.trim()?'README 미작성':meaningfulReadmeText(text).length<100?'README 내용 부족':coreMissing.length?'README 보완 필요':'README 양호';
+  result.missing_items=missing.join(',');
+  Object.assign(result,localReadmeLinks(text,files,readmePath));
+  return result;
+}
 
 // === GithubService.gs ===
 function gh(path,optional){const token=props().getProperty('GITHUB_TOKEN');if(!token)throw publicError('CONFIG_ERROR','GitHub 연동 설정이 필요합니다.');const r=UrlFetchApp.fetch('https://api.github.com'+path,{headers:{Authorization:'Bearer '+token,Accept:'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28','User-Agent':'READY-portfolio-monitor'},muteHttpExceptions:true});const code=r.getResponseCode();if(code===404&&optional)return null;if(code<200||code>=300){const e=publicError('GITHUB_ERROR',code===404?'등록한 GitHub 정보를 확인할 수 없습니다.':'GitHub 정보를 확인하지 못했습니다.');e.technical='GitHub HTTP '+code+' '+r.getContentText().slice(0,300);throw e}return JSON.parse(r.getContentText())}
@@ -88,18 +149,29 @@ function githubActivityStatus(days,inactive){if(days>=3)return '정상';if(days=
 function githubRecencyStatus(inactive){if(inactive==='')return '미점검';const days=Number(inactive);return days<=3?'정상':days<=6?'활동 필요':days<=13?'활동 부족':'장기 미활동'}
 function pushStatus(date){if(!date)return '미점검';const days=Math.max(0,Math.floor((Date.now()-new Date(date).getTime())/86400000));return days<=7?'정상':days<=14?'관심':days<=29?'업데이트 필요':'장기 미업데이트'}
 function repoCommits(base,username){const since=encodeURIComponent(isoDaysAgo(30)),author=username?'&author='+encodeURIComponent(username):'',all=[];for(let page=1;page<=3;page++){const batch=gh(base+'/commits?since='+since+author+'&per_page=100&page='+page,true)||[];all.push(...batch);if(batch.length<100)break}return all}
+function repoSourcePresent(paths){
+  const extensions=/\.(?:java|kt|py|js|mjs|cjs|ts|jsx|tsx|vue|go|dart|sql|r|ipynb|c|cpp|cs|swift|php|rb|rs|html|css)$/i;
+  return paths.some(p=>extensions.test(p)&&!/(^|\/)(?:vendor|node_modules|dist|build|target|\.next|coverage|generated)(?:\/|$)/i.test(p));
+}
+function repoTreePaths(base,meta){
+  try{
+    const tree=gh(base+'/git/trees/'+encodeURIComponent(meta.default_branch||'HEAD')+'?recursive=1',true);
+    if(!tree||tree.truncated||!Array.isArray(tree.tree))return null;
+    return tree.tree.filter(x=>x.type==='blob').map(x=>x.path);
+  }catch(e){return null} // Optional quality checks must not turn API errors into student deficiencies.
+}
 function checkRepository(student,repo,full,previous,previousReadme){
-  const base='/repos/'+encodeURIComponent(repo.repo_owner)+'/'+encodeURIComponent(repo.repo_name),meta=gh(base),commits=repoCommits(base,student.github_username),dates=commits.map(c=>c.commit&&c.commit.author&&c.commit.author.date).filter(Boolean).sort().reverse(),last=dates[0]||'',allowed7=recentDateSet(7),seven=commits.filter(c=>{const d=c.commit&&c.commit.author&&c.commit.author.date;return d&&allowed7.has(Utilities.formatDate(new Date(d),READY.TZ,'yyyy-MM-dd'))}),result={repo_id:repo.repo_id,student_id:student.student_id,checked_at:now(),last_commit_at:last,last_push_at:meta.pushed_at||'',commits_7d:seven.length,commits_30d:commits.length,student_commits_7d:seven.length,student_commits_30d:commits.length,active_days_7d:activityDates(commits,7).length,active_days_14d:activityDates(commits,14).length,primary_language:meta.language||'',github_updated_at:meta.updated_at||'',visibility:meta.private?'Private':'Public',push_status:pushStatus(meta.pushed_at),check_status:'SUCCESS',error_message:''};
+  const base='/repos/'+encodeURIComponent(repo.repo_owner)+'/'+encodeURIComponent(repo.repo_name),meta=gh(base),commits=repoCommits(base,student.github_username),dates=commits.map(c=>c.commit&&c.commit.author&&c.commit.author.date).filter(Boolean).sort().reverse(),older=dates.length?[]:(gh(base+'/commits?author='+encodeURIComponent(student.github_username)+'&per_page=1',true)||[]),last=dates[0]||older[0]?.commit?.author?.date||'',allowed7=recentDateSet(7),seven=commits.filter(c=>{const d=c.commit&&c.commit.author&&c.commit.author.date;return d&&allowed7.has(Utilities.formatDate(new Date(d),READY.TZ,'yyyy-MM-dd'))}),result={repo_id:repo.repo_id,student_id:student.student_id,checked_at:now(),last_commit_at:last,last_push_at:meta.pushed_at||'',commits_7d:seven.length,commits_30d:commits.length,student_commits_7d:seven.length,student_commits_30d:commits.length,active_days_7d:activityDates(commits,7).length,active_days_14d:activityDates(commits,14).length,primary_language:meta.language||'',github_updated_at:meta.updated_at||'',visibility:meta.private?'Private':'Public',push_status:pushStatus(meta.pushed_at),check_status:'SUCCESS',error_message:''};
   result.activity_dates_14d=JSON.stringify(activityDates(commits,14));
   if(full){
-    const unchanged=previous&&previousReadme&&String(previous.last_push_at||'')===String(meta.pushed_at||'');
+    const unchanged=previous&&previousReadme&&Number(previousReadme.rule_version)===2&&String(previous.last_push_at||'')===String(meta.pushed_at||'');
     if(unchanged){
-      ['readme_exists','gitignore_exists','license_exists','description_exists','topics_count','topics','branch_count'].forEach(k=>result[k]=previous[k]);
+      ['readme_exists','gitignore_exists','license_exists','description_exists','topics_count','topics','branch_count','source_exists'].forEach(k=>result[k]=previous[k]);
       upsert('README_CHECK','repo_id',Object.assign({},previousReadme,{checked_at:result.checked_at,check_status:'SUCCESS',error_message:''}));
     }else{
       const readme=gh(base+'/readme',true),ignore=gh(base+'/contents/.gitignore',true),license=meta.license||gh(base+'/license',true),branches=gh(base+'/branches?per_page=100',true)||[];let markdown='';
       if(readme&&readme.content){try{markdown=Utilities.newBlob(Utilities.base64Decode(readme.content.replace(/\s/g,''))).getDataAsString()}catch(e){markdown=''}}
-      const analysis=analyzeReadme(markdown);
+      const files=repoTreePaths(base,meta);const analysis=analyzeReadme(markdown,files,readme&&readme.path||'README.md');result.source_exists=files?repoSourcePresent(files):'';
       result.readme_exists=Boolean(readme);result.gitignore_exists=Boolean(ignore);result.license_exists=Boolean(license);result.description_exists=Boolean(String(meta.description||'').trim());result.topics=JSON.stringify(meta.topics||[]);result.topics_count=(meta.topics||[]).length;result.branch_count=branches.length;
       upsert('README_CHECK','repo_id',Object.assign({repo_id:repo.repo_id,student_id:student.student_id,checked_at:result.checked_at,readme_exists:Boolean(readme),check_status:'SUCCESS',error_message:''},analysis));
     }
@@ -195,35 +267,67 @@ function history(sid,category,field,oldV,newV,by){append('CHANGE_HISTORY',{histo
 function getChangeHistory(sid){return rows('CHANGE_HISTORY').filter(x=>String(x.student_id)===String(sid)).sort((a,b)=>String(b.changed_at).localeCompare(String(a.changed_at))).map(safeRow)}
 
 // === ReadinessService.gs ===
+// One backend definition supplies both the checklist and every actionable warning.
+const READINESS_RULES=[
+  {code:'github_days',title:'최근 7일 GitHub 활동',criterion:'최근 7일 중 커밋한 날짜 3일 이상 권장 (하루 여러 커밋은 1일)',how:'등록한 GitHub Repository에서 코드를 수정하고 커밋하세요. 하루에 몰아서 커밋해도 활동일은 1일입니다.'},
+  {code:'github_inactive',title:'GitHub 장기 미활동',criterion:'마지막 본인 커밋 이후 14일 이상이면 보완 안내',how:'GitHub의 등록된 Repository에서 작업한 코드를 커밋하세요. 점검 대상은 등록된 프로젝트의 기본 브랜치에 확인된 본인 커밋입니다.'},
+  {code:'repository_missing',title:'Repository 등록',criterion:'본인 GitHub 프로젝트 Repository 1개 이상 등록',how:'READY 로그인 → 내 정보 수정 → Repository 추가에서 프로젝트 주소를 등록하세요.'},
+  {code:'readme_quality',title:'README 9개 항목',criterion:'소개·목적·기능·기술스택·아키텍처·실행 안내·실행 화면·본인 역할·트러블슈팅 확인 (핵심 7개 충족)',how:'GitHub → 대표 Repository → README.md → 연필(편집)에서 누락된 제목과 해당 프로젝트의 구체적인 내용을 작성하세요. 역할·문제 해결 과정은 특히 자세히 작성하세요.'},
+  {code:'source_missing',title:'프로젝트 소스코드',criterion:'등록 Repository에서 소스 파일 확인 (참고 항목)',how:'실제로 작성한 프로젝트 소스를 Repository에 올려 주세요. 소스 구조가 특수한 경우에는 이 항목만으로 감점하지 않습니다.'},
+  {code:'broken_links',title:'README 문서 링크',criterion:'README의 Repository 내부 이미지·파일 연결 확인 (참고 항목)',how:'GitHub → README.md 편집에서 표시된 잘못된 상대경로를 실제 파일 위치에 맞게 고치세요. 외부 URL은 여기서 검사하지 않습니다.'},
+  {code:'repository_quality',title:'Repository 소개 정보',criterion:'Description 및 Topic 등록 권장',how:'GitHub → Repository 오른쪽 About의 톱니바퀴에서 Description과 Topics를 작성하세요. .gitignore는 기존의 단순 존재 확인만 제공합니다.'},
+  {code:'portfolio_update',title:'포트폴리오',criterion:'Notion 최근 수정 또는 공개 포트폴리오 URL 접속 확인',how:'READY → 내 정보 수정에서 포트폴리오 URL을 확인하고, 공개 접근이 가능하도록 설정하세요.'},
+  {code:'resume',title:'2학년 이력서',criterion:'이력서 1차 완성 이상 (준비 우수는 최종 완성)',how:'이력서를 작성한 후 READY → 내 정보 수정 → 이력서 상태를 실제 준비 단계에 맞게 수정하세요.'},
+  {code:'cover',title:'2학년 자기소개서',criterion:'자기소개서 기본본 완성 이상 (준비 우수는 기업 지원 가능)',how:'자기소개서 기본본을 작성한 후 READY → 내 정보 수정 → 자기소개서 상태를 실제 준비 단계에 맞게 수정하세요.'}
+];
+function readinessGuide(){return READINESS_RULES.map(r=>Object.assign({},r))}
+function readinessIssue(code){
+  if(code==='readme_missing')code='readme_quality';
+  if(code==='portfolio_missing')code='portfolio_update';
+  if(code==='license')code='repository_quality';
+  const rule=READINESS_RULES.find(r=>r.code===code);
+  if(rule)return{why:rule.criterion,how:rule.how,area:rule.title};
+  if(code==='github_stale'||code==='github_check_failed'||code==='github_partial'||code==='readme_unchecked')
+    return{why:'점검이 아직 완료되지 않아 활동 부족으로 확정할 수 없습니다.',how:'다음 정기 점검 후 확인하거나 내 현황에서 지금 점검하기를 눌러 주세요.',area:'점검 상태'};
+  return{why:'등록 또는 점검된 정보를 다시 확인해 주세요.',how:'READY → 내 정보 수정에서 등록 정보를 확인해 주세요.',area:'기타 점검'};
+}
+function recentReadyCheck(c){
+  const time=Date.parse(String(c&&c.checked_at||''));
+  return Number.isFinite(time)&&time<=Date.now()+300000&&Date.now()-time<=36*3600000;
+}
 function evaluateStudentReadiness(student,checks){const g=checks.github||{},repo=checks.repository||{},readme=checks.readme||{},notion=checks.notion||{},count=Number(checks.repositoryCount||0),second=String(student.grade)==='2',issues=[];
-  const add=(code,label,priority,required=true)=>issues.push({code:code,label:label,priority:priority,required:required});
-  const days=Number(g.active_days_7d||0),githubChecked=['SUCCESS','PARTIAL'].includes(String(g.check_status||'')),githubOK=githubChecked&&days>=3,repositoryOK=count>0,readmeOK=readme.readme_status==='README 양호',portfolioRegistered=Boolean(student.notion_url||student.portfolio_url||student.github_pages_url||student.blog_url),notionOK=Boolean(student.notion_url&&notion.check_status==='SUCCESS'&&notion.activity_status==='최근 업데이트'),otherPortfolioOK=Boolean(checks.publicPortfolio&&checks.publicPortfolio.check_status==='SUCCESS'&&String(checks.publicPortfolio.site_available).toLowerCase()==='true'),portfolioOK=portfolioRegistered&&Boolean(notionOK||otherPortfolioOK),resumeGood=['1차 완성','최종 완성'].includes(student.resume_status),resumeExcellent=student.resume_status==='최종 완성',coverGood=['기본본 완성','기업 지원 가능'].includes(student.cover_letter_status),coverExcellent=student.cover_letter_status==='기업 지원 가능',inactive14=githubChecked&&g.inactive_days!==''&&Number(g.inactive_days)>=14;
-  if(inactive14)add('github_inactive','GitHub 14일 이상 미활동',1);
-  else if(githubChecked&&!githubOK)add('github_days','최근 7일 GitHub 활동 '+days+'일 · 권장 3일',6);
-  else if(g.check_status==='FAILED')add('github_check_failed','GitHub 자동점검 실패 · 다시 점검 필요',50,false);
-  if(g.check_status==='PARTIAL')add('github_partial','일부 Repository 자동점검 실패',51,false);
+  const add=(code,label,priority,required=true,evidence='')=>issues.push(Object.assign({code,label,priority,required,level:required?'action':'suggestion',evidence},readinessIssue(code)));
+  const days=Number(g.active_days_7d||0),githubFresh=recentReadyCheck(g),githubChecked=githubFresh&&['SUCCESS','PARTIAL'].includes(String(g.check_status||'')),githubComplete=githubFresh&&g.check_status==='SUCCESS',githubOK=githubChecked&&days>=3,repositoryOK=count>0,readmeFresh=recentReadyCheck(readme)&&readme.check_status==='SUCCESS',readmeOK=readmeFresh&&readme.readme_status==='README 양호',portfolioRegistered=Boolean(student.notion_url||student.portfolio_url||student.github_pages_url||student.blog_url),notionOK=Boolean(student.notion_url&&recentReadyCheck(notion)&&notion.check_status==='SUCCESS'&&notion.activity_status==='최근 업데이트'),otherPortfolioOK=Boolean(checks.publicPortfolio&&recentReadyCheck(checks.publicPortfolio)&&checks.publicPortfolio.check_status==='SUCCESS'&&String(checks.publicPortfolio.site_available).toLowerCase()==='true'),portfolioOK=portfolioRegistered&&Boolean(notionOK||otherPortfolioOK),resumeGood=['1차 완성','최종 완성'].includes(student.resume_status),resumeExcellent=student.resume_status==='최종 완성',coverGood=['기본본 완성','기업 지원 가능'].includes(student.cover_letter_status),coverExcellent=student.cover_letter_status==='기업 지원 가능',inactive14=githubComplete&&g.inactive_days!==''&&Number(g.inactive_days)>=14;
+  if(inactive14)add('github_inactive','GitHub 14일 이상 미활동',1,true,'마지막 확인된 본인 커밋 이후 '+g.inactive_days+'일');
+  else if(githubComplete&&!githubOK)add('github_days','최근 7일 GitHub 활동 '+days+'일 · 권장 3일',6,true,'확인된 활동 '+days+'일 / 권장 3일');
+  if(!githubFresh&&count>0)add('github_stale','GitHub 점검 결과 확인 필요',48,false,'마지막 점검 '+(g.checked_at||'없음'));
+  else if(g.check_status==='FAILED')add('github_check_failed','GitHub 자동점검 실패',50,false,'API 점검 실패');
+  else if(g.check_status==='PARTIAL')add('github_partial','일부 Repository 자동점검 실패',51,false,'일부 프로젝트만 확인됨');
   if(!repositoryOK)add('repository_missing','Repository 미등록',2);
   if(second&&!resumeGood)add('resume','이력서 미완성',3);
   if(second&&!coverGood)add('cover','자기소개서 미완성',4);
   if(repositoryOK){
-    if(readme.readme_status==='README 미작성')add('readme_missing','README 미작성',5);
-    else if(!readmeOK){const detail=[];if(readme.readme_exists&&!readme.role)detail.push('본인 역할');if(readme.readme_exists&&!readme.troubleshooting)detail.push('트러블슈팅');add('readme_quality',detail.length?'README 보완 필요 · '+detail.join(' · '):(readme.readme_status||'README 점검 필요'),5)}
+    if(readmeFresh){
+      if(readme.readme_status==='README 미작성')add('readme_missing','README 미작성',5,true,'대표 Repository에 README.md가 없습니다.');
+      else if(!readmeOK){const missing=String(readme.missing_items||'').split(',').filter(Boolean),names={introduction:'프로젝트 소개',purpose:'개발 목적',features:'주요 기능',tech_stack:'기술 스택',architecture:'아키텍처',run_guide:'설치·실행 안내',screenshots:'실행 화면',role:'본인 역할',troubleshooting:'트러블슈팅'};const detail=missing.map(k=>names[k]||k);add('readme_quality','README 보완 필요 · '+(detail.slice(0,2).join(' · ')||readme.readme_status),5,true,'누락 또는 내용 부족: '+(detail.join(', ')||readme.readme_status))}
+      if(readme.broken_links_count!==''&&Number(readme.broken_links_count)>0)add('broken_links','README 내부 링크 경로 확인',21,false,'파일 확인 필요: '+(readme.broken_link_samples||readme.broken_links_count+'개'));
+    }else add('readme_unchecked','README 점검 결과 확인 필요',49,false,'최근에 확인된 README 점검 결과가 없습니다.');
   }
   if(!portfolioRegistered)add('portfolio_missing','포트폴리오 미등록',7);
   else if(!portfolioOK)add('portfolio_update',notion.activity_status==='장기 미업데이트'?'포트폴리오 장기 미수정':'포트폴리오 접근·업데이트 확인 필요',7);
-  if(repositoryOK&&repo.check_status==='SUCCESS'){const quality=[];if(!repo.description_exists)quality.push('Description');if(!Number(repo.topics_count||0))quality.push('Topic');if(!repo.gitignore_exists)quality.push('.gitignore');if(quality.length)add('repository_quality','Repository 기본정보 보완 · '+quality.join(' · '),20,false);if(!repo.license_exists)add('license','LICENSE 미등록',90,false)}
+  if(repositoryOK&&recentReadyCheck(repo)&&repo.check_status==='SUCCESS'){const quality=[];if(!repo.description_exists)quality.push('Description');if(!Number(repo.topics_count||0))quality.push('Topic');if(!repo.gitignore_exists)quality.push('.gitignore');if(quality.length)add('repository_quality','Repository 기본정보 보완 · '+quality.join(' · '),20,false);if(!repo.license_exists)add('license','LICENSE 미등록',90,false);if(repo.source_exists===false||String(repo.source_exists).toLowerCase()==='false')add('source_missing','소스 파일 위치 확인 필요',22,false,'등록 Repository에서 일반적인 확장자 소스 파일을 찾지 못했습니다.')}
   const core=[githubOK,repositoryOK,readmeOK,portfolioOK],coreMet=core.filter(Boolean).length;let status;
   if(second){const excellent=core.every(Boolean)&&resumeExcellent&&coverExcellent,good=githubOK&&repositoryOK&&coreMet>=3&&resumeGood&&coverGood;status=excellent?'준비 우수':good?'준비 양호':(coreMet>0||resumeGood||coverGood)?'준비 중':'관심 필요'}
   else{const excellent=core.every(Boolean),good=githubOK&&repositoryOK&&coreMet>=3;status=excellent?'준비 우수':good?'준비 양호':coreMet>0?'준비 중':'관심 필요'}
   issues.sort((a,b)=>a.priority-b.priority);
-  return{status:status,github:{active_days_7d:days,active_days_14d:Number(g.active_days_14d||0),activity_status:g.activity_status||'미점검',inactive_days:g.inactive_days,check_status:g.check_status||'미점검'},repository:{count:count,push_status:repo.push_status||'미점검'},readme:{status:readme.readme_status||'미점검'},portfolio:{registered:portfolioRegistered,status:!portfolioRegistered?'미등록':notionOK?'최근 업데이트':portfolioOK?'정상 접근 가능':notion.activity_status||'등록됨'},documents:second?{resume:student.resume_status||'미작성',cover_letter:student.cover_letter_status||'미작성'}:null,issues:issues,priorityIssues:issues.filter(x=>x.required).slice(0,3)}
+  return{status:status,guide_version:2,github_fresh:githubFresh,github_checked_at:g.checked_at||'',status_explanation:!githubFresh&&repositoryOK?'GitHub 최신 점검 결과가 없어 이전 준비상태를 확정할 수 없습니다.':'',github:{active_days_7d:days,active_days_14d:Number(g.active_days_14d||0),activity_status:g.activity_status||'미점검',inactive_days:g.inactive_days,check_status:g.check_status||'미점검'},repository:{count:count,push_status:repo.push_status||'미점검'},readme:{status:readme.readme_status||'미점검'},portfolio:{registered:portfolioRegistered,status:!portfolioRegistered?'미등록':notionOK?'최근 업데이트':portfolioOK?'정상 접근 가능':notion.activity_status||'등록됨'},documents:second?{resume:student.resume_status||'미작성',cover_letter:student.cover_letter_status||'미작성'}:null,issues:issues,priorityIssues:issues.filter(x=>x.required).slice(0,3)}
 }
 function readinessContext(){return{github:latestMap('GITHUB_CHECK','student_id'),repository:latestMap('REPOSITORY_CHECK','repo_id'),readme:latestMap('README_CHECK','repo_id'),notion:latestMap('NOTION_CHECK','student_id'),portfolio:latestMap('PORTFOLIO_CHECK','student_id'),blog:latestMap('BLOG_CHECK','student_id'),repos:active('REPOSITORIES'),certs:active('CERTIFICATES')}}
 function evaluatedStudent(s,c){const sid=String(s.student_id),repos=c.repos.filter(r=>String(r.student_id)===sid).sort((a,b)=>Number(String(b.is_primary).toLowerCase()==='true')-Number(String(a.is_primary).toLowerCase()==='true')||Number(a.display_order||99)-Number(b.display_order||99)),primary=repos[0]||{},github=c.github[sid]||{},repo=c.repository[String(primary.repo_id)]||{},readme=c.readme[String(primary.repo_id)]||{},notion=c.notion[sid]||{},blog=c.blog[sid]||{},portfolio=c.portfolio[sid]||{},evaluation=evaluateStudentReadiness(s,{github:github,repository:repo,readme:readme,notion:notion,blog:blog,publicPortfolio:portfolio,repositoryCount:repos.length});return{student:s,github:github,repository:repo,readme:readme,notion:notion,blog:blog,repositories:repos,evaluation:evaluation,certificateCount:c.certs.filter(x=>String(x.student_id)===sid&&x.status==='취득').length,portfolioCheck:portfolio}}
 
 // === DashboardService.gs ===
 function latestMap(name,key){const out={};rows(name).sort((a,b)=>String(a.checked_at||'').localeCompare(String(b.checked_at||''))).forEach(x=>out[String(x[key])]=x);return out}
-function getMyDashboard(session){const profile=getMyProfile(session),c=readinessContext(),item=evaluatedStudent(profile.student,c);return{student:profile.student,github:safeRow(item.github),blog:safeRow(item.blog),notion:safeRow(item.notion),portfolio_check:safeRow(item.portfolioCheck||{}),repository:safeRow(item.repository),readme:safeRow(item.readme),evaluation:item.evaluation,repositories:item.repositories.map(r=>Object.assign(safeRow(r),safeRow(c.repository[String(r.repo_id)]||{}),{readme_check:safeRow(c.readme[String(r.repo_id)]||{})})),suggestions:item.evaluation.priorityIssues.map(x=>x.label)}}
+function getMyDashboard(session){const profile=getMyProfile(session),c=readinessContext(),item=evaluatedStudent(profile.student,c);return{student:profile.student,github:safeRow(item.github),blog:safeRow(item.blog),notion:safeRow(item.notion),portfolio_check:safeRow(item.portfolioCheck||{}),repository:safeRow(item.repository),readme:safeRow(item.readme),evaluation:item.evaluation,repositories:item.repositories.map(r=>Object.assign(safeRow(r),safeRow(c.repository[String(r.repo_id)]||{}),{readme_check:safeRow(c.readme[String(r.repo_id)]||{})})),suggestions:item.evaluation.priorityIssues.map(x=>x.label),readiness_guide:readinessGuide()}}
 function publicPortfolioLink(item){
   const check=item.portfolioCheck||{};
   try{
@@ -232,7 +336,7 @@ function publicPortfolioLink(item){
   }catch(e){}
   return ''
 }
-function publicStudent(item){const s=item.student,e=item.evaluation,g=item.github,n=item.notion;return{name:String(s.name||''),grade:String(s.grade||''),career_target:String(s.career_target||''),preparation_status:e.status,active_days_7d:Number(g.active_days_7d||0),active_days_14d:Number(g.active_days_14d||0),commits_7d:Number(g.commits_7d||0),last_activity_at:g.last_activity_at||'',github_active_7d:['SUCCESS','PARTIAL'].includes(String(g.check_status||''))&&Number(g.active_days_7d||0)>=3,github_activity_status:g.activity_status||'미점검',repository_count:item.repositories.length,readme_status:item.readme.readme_status||'미점검',portfolio_registered:e.portfolio.registered,portfolio_status:e.portfolio.status,notion_registered:Boolean(s.notion_url),notion_last_edited_at:n.last_edited_at||'',notion_activity_status:n.activity_status||(!s.notion_url?'미등록':'미점검'),notion_check_status:n.check_status||'미점검',resume_status:String(s.grade)==='2'?(s.resume_status||'미작성'):'',cover_letter_status:String(s.grade)==='2'?(s.cover_letter_status||'미작성'):'',certificate_count:item.certificateCount,job_ready:String(s.grade)==='2'&&e.status==='준비 우수',issues:e.issues.map(x=>x.label),priority_issues:e.priorityIssues.map(x=>x.label),github_url:String(s.github_url||''),primary_repository_url:item.repository.visibility==='Public'?String(item.repositories[0]?.repo_url||''):'',public_portfolio_url:publicPortfolioLink(item)}}
+function publicStudent(item){const s=item.student,e=item.evaluation,g=item.github,n=item.notion;return{name:String(s.name||''),grade:String(s.grade||''),career_target:String(s.career_target||''),preparation_status:e.status,active_days_7d:Number(g.active_days_7d||0),active_days_14d:Number(g.active_days_14d||0),commits_7d:Number(g.commits_7d||0),last_activity_at:g.last_activity_at||'',github_active_7d:e.github_fresh&&['SUCCESS','PARTIAL'].includes(String(g.check_status||''))&&Number(g.active_days_7d||0)>=3,github_activity_status:g.activity_status||'미점검',repository_count:item.repositories.length,readme_status:item.readme.readme_status||'미점검',portfolio_registered:e.portfolio.registered,portfolio_status:e.portfolio.status,notion_registered:Boolean(s.notion_url),notion_last_edited_at:n.last_edited_at||'',notion_activity_status:n.activity_status||(!s.notion_url?'미등록':'미점검'),notion_check_status:n.check_status||'미점검',resume_status:String(s.grade)==='2'?(s.resume_status||'미작성'):'',cover_letter_status:String(s.grade)==='2'?(s.cover_letter_status||'미작성'):'',certificate_count:item.certificateCount,job_ready:String(s.grade)==='2'&&e.status==='준비 우수',issues:e.issues.map(x=>x.label),priority_issues:e.priorityIssues.map(x=>x.label),priority_issue_details:e.priorityIssues.concat(e.issues.filter(x=>['github_stale','github_check_failed','github_partial','readme_unchecked'].includes(x.code))).slice(0,4).map(x=>({code:x.code,label:x.label,why:x.why,how:x.how,evidence:x.evidence,level:x.level,area:x.area})),github_fresh:e.github_fresh,github_checked_at:e.github_checked_at,github_check_status:g.check_status||'미점검',github_url:String(s.github_url||''),primary_repository_url:item.repository.visibility==='Public'?String(item.repositories[0]?.repo_url||''):'',public_portfolio_url:publicPortfolioLink(item)}}
 function publicStudents(){const c=readinessContext();return active('STUDENTS').map(s=>publicStudent(evaluatedStudent(s,c)))}
 function getClassDashboard(){const ss=publicStudents();return{summary:{'전체 학생':ss.length,'최근 7일 GitHub 활동':ss.filter(x=>x.github_active_7d).length,'Notion 등록':ss.filter(x=>x.notion_registered).length,'준비 우수':ss.filter(x=>x.preparation_status==='준비 우수').length},students:ss}}
 function recentPublicUpdates(){
@@ -248,9 +352,9 @@ function recentPublicUpdates(){
     .sort((a,b)=>String(b.changed_at).localeCompare(String(a.changed_at)))
     .slice(0,8).map(x=>({name:students[String(x.student_id)],label:types[x.category][x.field_name],changed_at:x.changed_at}));
 }
-function getPublicSummary(){const ss=publicStudents().sort((a,b)=>a.name.localeCompare(b.name,'ko'));return{total_students:ss.length,grade1:ss.filter(x=>x.grade==='1').length,grade2:ss.filter(x=>x.grade==='2').length,github_active_7d:ss.filter(x=>x.github_active_7d).length,portfolio_registered:ss.filter(x=>x.portfolio_registered).length,job_ready:ss.filter(x=>x.job_ready).length,student_activity:ss,recent_updates:recentPublicUpdates(),updated_at:now()}}
-function getAdminDashboard(){const c=readinessContext(),items=active('STUDENTS').map(s=>{const item=evaluatedStudent(s,c),p=publicStudent(item);return Object.assign({},p,{student_id:s.student_id,github:{activity_status:item.github.activity_status||'미점검',check_status:item.github.check_status||'미점검',active_days_7d:p.active_days_7d,active_days_14d:p.active_days_14d,commits_7d:p.commits_7d,commits_30d:Number(item.github.commits_30d||0),inactive_days:item.github.inactive_days,last_activity_at:item.github.last_activity_at||''},repository:{description_exists:item.repository.description_exists,topics_count:item.repository.topics_count,gitignore_exists:item.repository.gitignore_exists},portfolio:{notion:Boolean(s.notion_url),personal:Boolean(s.portfolio_url),pages:Boolean(s.github_pages_url),blog:Boolean(s.blog_url)},certificate_count:item.certificateCount,reasons:item.evaluation.issues.map(x=>x.label),priority_issues:item.evaluation.priorityIssues.map(x=>x.label)})}),logs=rows('CHECK_LOG').filter(x=>String(x.started_at).startsWith(today()));return{summary:{total:items.length,grade1:items.filter(x=>x.grade==='1').length,grade2:items.filter(x=>x.grade==='2').length,gradeUnset:items.filter(x=>!x.grade).length,excellent:items.filter(x=>x.preparation_status==='준비 우수').length,good:items.filter(x=>x.preparation_status==='준비 양호').length,progress:items.filter(x=>x.preparation_status==='준비 중').length,attention:items.filter(x=>x.preparation_status==='관심 필요').length,githubActive:items.filter(x=>x.github_active_7d).length,checkToday:logs.reduce((a,x)=>a+Number(x.success_count||0),0)+' / '+logs.reduce((a,x)=>a+Number(x.failed_count||0),0)},students:items}}
-function getAdminStudentDetail(_,sid){const s=active('STUDENTS').find(x=>String(x.student_id)===String(sid));if(!s)throw publicError('NOT_FOUND','학생 정보를 찾을 수 없습니다.');const c=readinessContext(),item=evaluatedStudent(s,c),memo=rows('PROFESSOR_MEMO').find(x=>String(x.student_id)===String(sid));return{student:safeRow(s),evaluation:item.evaluation,repositories:item.repositories.map(r=>Object.assign(safeRow(r),safeRow(c.repository[String(r.repo_id)]||{}),{readme_check:safeRow(c.readme[String(r.repo_id)]||{})})),certificates:active('CERTIFICATES').filter(x=>String(x.student_id)===String(sid)).map(safeRow),history:getChangeHistory(sid),checks:{github:safeRow(item.github),blog:safeRow(item.blog),notion:safeRow(item.notion),portfolio:safeRow(item.portfolioCheck||{})},memo:memo?safeRow(memo):null}}
+function getPublicSummary(){const ss=publicStudents().sort((a,b)=>a.name.localeCompare(b.name,'ko'));return{total_students:ss.length,grade1:ss.filter(x=>x.grade==='1').length,grade2:ss.filter(x=>x.grade==='2').length,github_active_7d:ss.filter(x=>x.github_active_7d).length,portfolio_registered:ss.filter(x=>x.portfolio_registered).length,job_ready:ss.filter(x=>x.job_ready).length,student_activity:ss,recent_updates:recentPublicUpdates(),readiness_guide:readinessGuide(),updated_at:now()}}
+function getAdminDashboard(){const c=readinessContext(),items=active('STUDENTS').map(s=>{const item=evaluatedStudent(s,c),p=publicStudent(item);return Object.assign({},p,{student_id:s.student_id,github:{activity_status:item.github.activity_status||'미점검',check_status:item.github.check_status||'미점검',active_days_7d:p.active_days_7d,active_days_14d:p.active_days_14d,commits_7d:p.commits_7d,commits_30d:Number(item.github.commits_30d||0),inactive_days:item.github.inactive_days,last_activity_at:item.github.last_activity_at||''},repository:{description_exists:item.repository.description_exists,topics_count:item.repository.topics_count,gitignore_exists:item.repository.gitignore_exists},portfolio:{notion:Boolean(s.notion_url),personal:Boolean(s.portfolio_url),pages:Boolean(s.github_pages_url),blog:Boolean(s.blog_url)},certificate_count:item.certificateCount,reasons:item.evaluation.issues.map(x=>x.label),priority_issues:item.evaluation.priorityIssues.map(x=>x.label)})}),logs=rows('CHECK_LOG').filter(x=>String(x.started_at).startsWith(today()));return{summary:{total:items.length,grade1:items.filter(x=>x.grade==='1').length,grade2:items.filter(x=>x.grade==='2').length,gradeUnset:items.filter(x=>!x.grade).length,excellent:items.filter(x=>x.preparation_status==='준비 우수').length,good:items.filter(x=>x.preparation_status==='준비 양호').length,progress:items.filter(x=>x.preparation_status==='준비 중').length,attention:items.filter(x=>x.preparation_status==='관심 필요').length,githubActive:items.filter(x=>x.github_active_7d).length,checkToday:logs.reduce((a,x)=>a+Number(x.success_count||0),0)+' / '+logs.reduce((a,x)=>a+Number(x.failed_count||0),0)},students:items,readiness_guide:readinessGuide()}}
+function getAdminStudentDetail(_,sid){const s=active('STUDENTS').find(x=>String(x.student_id)===String(sid));if(!s)throw publicError('NOT_FOUND','학생 정보를 찾을 수 없습니다.');const c=readinessContext(),item=evaluatedStudent(s,c),memo=rows('PROFESSOR_MEMO').find(x=>String(x.student_id)===String(sid));return{student:safeRow(s),evaluation:item.evaluation,repositories:item.repositories.map(r=>Object.assign(safeRow(r),safeRow(c.repository[String(r.repo_id)]||{}),{readme_check:safeRow(c.readme[String(r.repo_id)]||{})})),certificates:active('CERTIFICATES').filter(x=>String(x.student_id)===String(sid)).map(safeRow),history:getChangeHistory(sid),readiness_guide:readinessGuide(),checks:{github:safeRow(item.github),blog:safeRow(item.blog),notion:safeRow(item.notion),portfolio:safeRow(item.portfolioCheck||{})},memo:memo?safeRow(memo):null}}
 function saveProfessorMemo(_,req){const existing=rows('PROFESSOR_MEMO').find(x=>String(x.student_id)===String(req.student_id)),t=now(),o={memo_id:existing?existing.memo_id:id('memo'),student_id:req.student_id,memo_text:String(req.memo_text||''),created_at:existing?existing.created_at:t,updated_at:t};upsert('PROFESSOR_MEMO','student_id',o);history(req.student_id,'교수 메모','memo','', '[비공개 메모 수정]','ADMIN');return{saved:true}}
 
 // === CheckService.gs ===
