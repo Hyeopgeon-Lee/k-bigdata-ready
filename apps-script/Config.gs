@@ -3,7 +3,7 @@ const READY = {
   CHECK_COOLDOWN_MINUTES: 10, ACTIVE_DAYS: 7, WARN_DAYS: 14,
   SHEETS: {
     // grade is appended so initializeSpreadsheet() preserves every existing column.
-    STUDENTS: ['student_id','name','career_target','github_username','github_url','github_pages_url','github_pages_repo','notion_url','portfolio_url','blog_url','resume_status','cover_letter_status','pin_hash','active','created_at','updated_at','last_manual_update_at','grade'],
+    STUDENTS: ['student_id','name','career_target','github_username','github_url','github_pages_url','github_pages_repo','notion_url','portfolio_url','blog_url','resume_status','cover_letter_status','pin_hash','active','created_at','updated_at','last_manual_update_at','grade','peer_share_consent_at'],
     REPOSITORIES: ['repo_id','student_id','repo_owner','repo_name','repo_url','is_primary','display_order','active','registered_at','updated_at'],
     CERTIFICATES: ['certificate_id','student_id','certificate_name','status','acquired_date','active','created_at','updated_at'],
     GITHUB_CHECK: ['student_id','checked_at','last_activity_at','commits_7d','commits_30d','active_repository_count','readme_count','inactive_days','activity_status','check_status','error_message','active_days_7d','active_days_14d','recency_status'],
