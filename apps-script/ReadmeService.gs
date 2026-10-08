@@ -1,6 +1,6 @@
 // Rules are structural and do not claim to grade technical correctness.
 const README_AREAS={
-  introduction:/^(?:프로젝트\s*(?:소개|개요)|개요|overview|introduction|about(?:\s+(?:this|the)\s+project)?)$/i,
+  introduction:/^(?:프로젝트\s*(?:소개|개요)|개요|overview|introduction|about\s+(?:this|the)\s+project)$/i,
   purpose:/^(?:개발\s*(?:목적|배경)|문제\s*정의|why|motivation|problem\s*(?:statement|definition)|목표)$/i,
   features:/^(?:주요\s*기능|기능\s*소개|features?|main\s*features?)$/i,
   tech_stack:/^(?:기술\s*스택|사용\s*기술|tech\s*stack|technolog(?:y|ies))$/i,
