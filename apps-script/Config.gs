@@ -1,5 +1,5 @@
 const READY = {
-  TZ: 'Asia/Seoul', BATCH_SIZE: 30, SESSION_HOURS: 8,
+  TZ: 'Asia/Seoul', BATCH_SIZE: 30, SESSION_HOURS: 6, // CacheService entries expire within six hours
   CHECK_COOLDOWN_MINUTES: 10, ACTIVE_DAYS: 7, WARN_DAYS: 14,
   SHEETS: {
     // grade is appended so initializeSpreadsheet() preserves every existing column.
@@ -11,7 +11,7 @@ const READY = {
     README_CHECK: ['repo_id','student_id','checked_at','readme_exists','introduction','purpose','features','tech_stack','architecture','run_guide','screenshots','role','troubleshooting','readme_status','missing_items','check_status','error_message'],
     BLOG_CHECK: ['student_id','checked_at','site_available','last_repo_commit_at','last_post_date','posts_30d','platform_type','check_status','error_message'],
     NOTION_CHECK: ['student_id','checked_at','page_id','last_edited_at','inactive_days','activity_status','check_status','error_message'],
-    PORTFOLIO_CHECK: ['student_id','checked_at','url','site_available','check_status','error_message'],
+    PORTFOLIO_CHECK: ['student_id','checked_at','url','site_available','check_status','error_message','url_results'],
     CHANGE_HISTORY: ['history_id','student_id','changed_at','category','field_name','old_value','new_value','changed_by'],
     PROFESSOR_MEMO: ['memo_id','student_id','memo_text','created_at','updated_at'],
     CHECK_LOG: ['log_id','batch_id','started_at','finished_at','target_count','success_count','failed_count','status','error_message'],
