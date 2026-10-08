@@ -21,6 +21,8 @@ jobs:
         run: node tests/readiness-check.mjs
       - name: Peer progress integration tests
         run: node tests/peer-progress-check.mjs
+      - name: Guidance and README edge-case tests
+        run: node tests/readiness-guidance.mjs
       - name: Frontend syntax
         run: |
           node --input-type=module --check < assets/js/app.js
