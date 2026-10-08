@@ -235,3 +235,6 @@ main:has(.public-home){max-width:1180px;padding-top:30px}
 .portfolio-checks a{margin-left:auto;color:var(--brand);font-weight:700}
 .portfolio-ok{color:#16633a}.portfolio-failed{color:#a33f26}
 @media(max-width:650px){.recent-updates ul{grid-template-columns:1fr}.peer-links a{min-height:44px}.peer-meta>span{font-size:.68rem}}
+
+.peer-consent{display:flex;align-items:flex-start;gap:.65rem;padding:.85rem;margin:.6rem 0 1.2rem;border:1px solid #bfd1f0;border-radius:10px;background:#f2f6ff;color:#273c64;font-size:.82rem;line-height:1.65}
+.peer-consent input{flex:0 0 18px;width:18px;height:18px;margin:.2rem 0 0;accent-color:var(--brand)}
