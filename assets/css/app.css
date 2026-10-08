@@ -216,3 +216,22 @@ main:has(.public-home){max-width:1180px;padding-top:30px}
 @media(max-width:420px){
   .brand-copy strong,.brand-copy small{max-width:150px}
 }
+
+/* READY peer visibility and actionable preparation progress */
+.peer-progress{height:7px;margin:-.35rem 0 .75rem;background:#edf1f8;border-radius:100px;overflow:hidden}
+.peer-progress>span{display:block;height:100%;background:#2759b8;border-radius:100px;transition:width .2s ease}
+.peer-meta{display:flex;flex-wrap:wrap;gap:.3rem;margin-bottom:.6rem}
+.peer-meta>span{padding:.27rem .48rem;background:#f2f5fa;border:1px solid var(--line);border-radius:6px;color:#465672;font-size:.72rem}
+.peer-links{display:flex;flex-wrap:wrap;gap:.35rem;margin-bottom:.7rem}
+.peer-links a{display:inline-flex;align-items:center;min-height:36px;padding:.32rem .55rem;border:1px solid #b8cae9;border-radius:8px;background:#f3f7ff;color:#17458e;font-size:.77rem;font-weight:700;text-decoration:none}
+.peer-links a:hover,.peer-links a:focus-visible{border-color:var(--brand);outline-offset:2px}
+.recent-updates .muted{margin:.1rem 0 .85rem;font-size:.82rem}
+.recent-updates ul{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:.5rem}
+.recent-updates li{min-width:0;display:flex;flex-wrap:wrap;align-items:center;gap:.28rem .55rem;padding:.7rem .8rem;background:#f6f8fc;border:1px solid var(--line);border-radius:9px;font-size:.81rem}
+.recent-updates li strong{color:var(--ink)}.recent-updates li span{color:#31548c}
+.recent-updates li time{font-size:.72rem;color:var(--muted);margin-left:auto}
+.portfolio-checks{list-style:none;padding:0;display:grid;gap:.45rem}
+.portfolio-checks li{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;padding:.65rem .75rem;background:#f6f8fc;border-radius:9px;font-size:.82rem}
+.portfolio-checks a{margin-left:auto;color:var(--brand);font-weight:700}
+.portfolio-ok{color:#16633a}.portfolio-failed{color:#a33f26}
+@media(max-width:650px){.recent-updates ul{grid-template-columns:1fr}.peer-links a{min-height:44px}.peer-meta>span{font-size:.68rem}}
