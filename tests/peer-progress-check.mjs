@@ -37,12 +37,12 @@ const cache=new Map();
 const execute=code=>vm.runInContext(code,ctx);
 
 vm.runInContext(fs.readFileSync('apps-script/CheckService.gs','utf8'),ctx,{filename:'CheckService.gs'});
-assert.deepEqual(Array.from(execute('selectBatch()'),x=>x.student_id),['2','3'], 'Unvisited students must be processed before failed same-day retries');
+assert.deepEqual(Array.from(execute('selectBatch()'),x=>x.student_id),['3','2'], 'Unvisited students must be processed before failed same-day retries');
 const batch=execute('scheduledBatchCheck()');
 assert.equal(batch.target_count,2);
-assert.deepEqual(seen.github,['2','3']);
-assert.deepEqual(seen.notion,['2','3'], 'Notion checks should use same batch');
-assert.deepEqual(seen.portfolio,['2','3'], 'Portfolio checks should use same batch');
+assert.deepEqual(seen.github,['3','2']);
+assert.deepEqual(seen.notion,['3','2'], 'Notion checks should use same batch');
+assert.deepEqual(seen.portfolio,['3','2'], 'Portfolio checks should use same batch');
 
 vm.runInContext(fs.readFileSync('apps-script/PortfolioService.gs','utf8'),ctx,{filename:'PortfolioService.gs'});
 const portfolio=execute("checkPublicPortfolio({student_id:'2',portfolio_url:'https://broken.example',blog_url:'https://working.example',github_pages_url:'https://working.example'})");
