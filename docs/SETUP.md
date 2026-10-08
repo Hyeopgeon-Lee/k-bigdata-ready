@@ -51,3 +51,16 @@
 ## 브라우저/CORS 점검
 
 프론트엔드는 preflight를 피하도록 `Content-Type: text/plain;charset=utf-8`로 JSON 본문을 보내며 Apps Script의 리다이렉트를 따라갑니다. 배포 후 브라우저 개발자 도구 Network에서 `health`, 로그인 요청이 `/exec` → `script.googleusercontent.com` 리다이렉트 후 JSON 200인지 확인합니다. 배포 접근 권한이 조직 내부로 제한되면 익명 브라우저 호출이 로그인 HTML을 받아 실패합니다.
+
+## 2026-10-08 READY 공동 학습 현황 개편 후 점검
+
+1. GitHub `main` 코드와 운영 Apps Script deployment 버전 일치를 확인합니다.
+2. 기존 스프레드시트를 백업한 뒤 `initializeSpreadsheet()`를 실행합니다. `STUDENTS.peer_share_consent_at`, `PORTFOLIO_CHECK.url_results`가 마지막 열에 추가되어야 합니다.
+3. `runTestCheck('실제 학번')`으로 포트폴리오, GitHub, Notion 개별 결과를 확인합니다.
+4. 신규 등록 시 공개 안내 동의가 없으면 등록 실패하고, 체크 후 등록되면 시각이 기록되는지 확인합니다.
+5. 등록 학생별 홈 화면이 공개된다는 점을 기존 학생에게도 알리고, 별도의 공개 동의·철회 정책을 마련합니다. `noindex`는 비공개 접근 제어가 아닙니다.
+6. 관리자/학생 PIN 다섯 번 실패 시 15분 동안 추가 로그인이 제한되는지 테스트합니다. 6시간 만료 후 재로그인해야 합니다.
+7. 06시·07시 트리거가 각 실행의 미점검 학생을 먼저 처리하고, GitHub·Notion·포트폴리오가 같은 학생에 대해 갱신되는지 확인합니다.
+8. 기존 `/exec` URL로 실제 응답을 테스트하고 학생 모바일 화면의 GitHub/대표 프로젝트/포트폴리오 링크를 확인합니다.
+
+**주의:** 계정 소유 확인은 여전히 학번과 PIN만으로 이루어집니다. 실제 재학생 명부 검증이나 학교 계정 기반 본인 인증은 별도 구축해야 하며, 미구현 상태에서 인증이 안전하다고 간주하면 안 됩니다.

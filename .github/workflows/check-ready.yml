@@ -1,0 +1,32 @@
+name: READY source checks
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Backend readiness regression tests
+        run: node tests/readiness-check.mjs
+      - name: Peer progress integration tests
+        run: node tests/peer-progress-check.mjs
+      - name: Frontend syntax
+        run: |
+          node --input-type=module --check < assets/js/app.js
+          node --input-type=module --check < assets/js/readiness-ui.js
+          node --input-type=module --check < assets/js/api.js
+      - name: Verify generated Apps Script bundle
+        run: |
+          node tools/build-gas-bundle.mjs
+          git diff --exit-code -- deployment/READY_Code.gs
