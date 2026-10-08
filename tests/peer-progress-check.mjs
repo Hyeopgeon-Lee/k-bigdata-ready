@@ -25,6 +25,7 @@ const ctx=vm.createContext({
   UrlFetchApp:{fetch:url=>({getResponseCode:()=>url.includes('broken')?404:200})},
   Date,JSON,Set,Map,
   now:()=>new Date().toISOString(),
+  publicError:(code,message)=>Object.assign(new Error(message),{code}),
   rows:name=>name==='GITHUB_CHECK'?checks:[],
   active:name=>name==='STUDENTS'?sampleStudents:[],
   id:prefix=>prefix+'_id',
