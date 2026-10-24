@@ -274,3 +274,22 @@ main:has(.public-home){max-width:1180px;padding-top:30px}
 .guide-highlights,.guide-rules{grid-template-columns:1fr}
 .guide-readme{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
+
+
+/* Student README example: scoped to the read-only sample guide */
+.guide-sample-link{display:flex;align-items:center;flex-wrap:wrap;gap:.65rem;margin:.8rem 0 1rem}
+.guide-sample-link>span{font-size:.82rem;color:var(--muted)}
+.readme-sample-page{max-width:1080px;margin-inline:auto}
+.readme-sample-actions{display:flex;align-items:center;flex-wrap:wrap;gap:.6rem;margin-top:1.2rem}
+.readme-sample-actions>.btn{text-decoration:none}
+.readme-sample-index{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:.45rem;margin-top:.85rem}
+.readme-sample-index a{display:block;background:#f3f7ff;border:1px solid #dce8fa;border-radius:9px;padding:.65rem .75rem;color:#17458e;text-decoration:none;font-size:.89rem;font-weight:650}
+.readme-sample-index a:hover,.readme-sample-index a:focus-visible{background:#e6efff;outline-offset:2px}
+.readme-sample-sections{display:grid;gap:.9rem;margin:1rem 0}
+.readme-sample-section{scroll-margin-top:6rem}
+.readme-sample-section h2{margin-top:0}
+.readme-sample-tip{margin:.2rem 0 .85rem;color:var(--muted);font-size:.88rem}
+.readme-sample-pre{white-space:pre-wrap;overflow-wrap:anywhere;background:#f5f7fb;border:1px solid #dce3ec;border-radius:9px;padding:1rem;font:400 .87rem/1.7 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-x:auto;tab-size:2;color:#213047}
+.readme-sample-page .guide-full{margin-top:.7rem}
+@media(max-width:800px){.readme-sample-index{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:580px){.readme-sample-index{grid-template-columns:1fr}.readme-sample-actions{display:grid;grid-template-columns:1fr}.readme-sample-actions .btn,.readme-sample-actions button{width:100%;text-align:center}.readme-sample-pre{padding:.75rem;font-size:.78rem}}
