@@ -30,7 +30,7 @@ export async function readyReadmeExample(){
     const list=container.querySelector("#readme-sample-sections");
     sections.forEach((section,i)=>{
       const id="sample-section-"+(i+1);
-      const a=document.createElement("a");a.href="#"+id;a.textContent=(i+1)+". "+section.title;index.append(a);
+      const a=document.createElement("a");a.href="#/readme-example";a.textContent=(i+1)+". "+section.title;a.addEventListener("click",e=>{e.preventDefault();document.getElementById(id)?.scrollIntoView({behavior:"smooth",block:"start"});});index.append(a);
       const article=document.createElement("article");article.className="todo-section readme-sample-section";article.id=id;
       const h=document.createElement("h2");h.textContent=(i+1)+". "+section.title;article.append(h);
       const p=document.createElement("p");p.className="readme-sample-tip";p.textContent=messages[i];article.append(p);
